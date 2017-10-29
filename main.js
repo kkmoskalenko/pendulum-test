@@ -1,6 +1,12 @@
 const g = 9.80665; // Среднее ускорение свободного падения на Земле
 
+/**
+ * Класс, представляющий приложение
+ */
 class Application {
+    /**
+     * Создаёт приложение
+     */
     constructor() {
         this.canvas = document.getElementById("canvas");
         this.context = this.canvas.getContext("2d");
@@ -12,44 +18,49 @@ class Application {
 
         this.button = document.getElementById("mainButton");
         this.button.addEventListener('click', () => {
-            if(this.run) {
+            if (this.run) {
                 Application.enableInputFields();
 
                 clearInterval(this.timer);
                 this.button.value = "Запустить";
             }
-            else {
-                if(Application.validateData()) {
-                    Application.disableInputFields();
+            else if (Application.validateData()) {
+                Application.disableInputFields();
 
-                    const data = Application.getData();
+                const data = Application.getData();
 
-                    this.pendulum = new Pendulum(250, 50, 20, data.amplitude, data.dt, data.length);
-                    this.pendulum.drawCord(this.context);
-                    this.pendulum.drawBob(this.context);
+                this.pendulum = new Pendulum(250, 50, 20, data.amplitude, data.dt, data.length);
+                this.pendulum.drawCord(this.context);
+                this.pendulum.drawBob(this.context);
 
-                    this.timer = setInterval(() => this.redraw(), this.interval);
-                    this.button.value = "Остановить";
-                }
+                this.timer = setInterval(() => this.redraw(), this.interval);
+                this.button.value = "Остановить";
             }
 
             this.run = !this.run;
         });
     }
 
-    // Очищает холст
+    /**
+     * Очищает холст
+     */
     clear() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    // Вызывается каждый кадр таймером перерисовки
+    /**
+     * Перерисовывает весь холст заново
+     */
     redraw() {
         this.clear();
 
         this.pendulum.draw(this.context);
     }
 
-    // Возвращает данные полей или null, если они заполнены неправильно
+    /**
+     * Получает данные полей
+     * @returns {*} Данные полей или null, если они заполнены неправильно
+     */
     static getData() {
         const amplitudeEl = document.getElementById("amplitude");
         const dtEl = document.getElementById("speed");
@@ -71,12 +82,14 @@ class Application {
             return null;
     }
 
-    // Выводит alert'ы о недопустимых значениях
-    // Возвращает true, если с данными полей всё нормально
+    /**
+     * Выводит alert'ы о недопустимых значениях
+     * @returns {boolean} Флаг, верно ли заполнены поля
+     */
     static validateData() {
         const data = Application.getData();
 
-        if(data === null) {
+        if (data === null) {
             alert("Одно или несколько полей заполнены неправильно или не заполнены совсем!");
             return false;
         }
@@ -95,7 +108,9 @@ class Application {
         }
     }
 
-    // Активирует поля ввода
+    /**
+     * Активирует поля ввода
+     */
     static enableInputFields() {
         const amplitudeField = document.getElementById('amplitude');
         const speedField = document.getElementById('speed');
@@ -106,7 +121,9 @@ class Application {
         lengthField.disabled = false;
     }
 
-    // Блокирует поля ввода
+    /**
+     * Блокирует поля ввода
+     */
     static disableInputFields() {
         const amplitudeField = document.getElementById('amplitude');
         const speedField = document.getElementById('speed');
@@ -118,7 +135,19 @@ class Application {
     }
 }
 
+/**
+ * Класс, представляющий маятник
+ */
 class Pendulum {
+    /**
+     * Создаёт маятник
+     * @param supportX0 Координата точки крепления маятника по оси X
+     * @param supportY0 Координата точки крепления маятника по оси Y
+     * @param radius Радиус груза (так как он имеет форму шара)
+     * @param amplitude Амплитуда колебания
+     * @param dt Шаг во времени – время, которое прибавляется к текущему при каждой перерисовке
+     * @param length Длина нити
+     */
     constructor(supportX0, supportY0, radius, amplitude, dt, length) {
         // Начальные координаты маятника
         this.x0 = supportX0;
@@ -128,24 +157,30 @@ class Pendulum {
         this.x = this.x0;
         this.y = this.y0;
 
-        this.radius = radius; // Радиус груза (так как он имеет форму круга)
-        this.amplitude = amplitude; // Амплитуда колебания
-        this.dt = dt; // Шаг во времени – время, которое прибавляется к текущему при каждой альтерации setTimeout()
-        this.length = length; // Длина нити
+        this.radius = radius;
+        this.amplitude = amplitude;
+        this.dt = dt;
+        this.length = length;
 
         this.time = 0; // Время
         this.period = this.calcPeriod();
         // this.dclrt = 0;
     }
 
-    // Вычисляет предварительное значение x (без учёта начальных координат)
-    calcX()  {
+    /**
+     * Вычисляет предварительное значение x (без учёта начальных координат)
+     * @returns {number} Значение x
+     */
+    calcX() {
         // x = amplitude * Math.sin(time/period * 2* Math.PI) * Math.pow(2.71, -0.1 * time * dclrt);
 
         return this.amplitude * Math.sin(this.time / this.period * 2 * Math.PI); // TODO: Разобраться, почему формула именно такая
     }
 
-    // Вычисляет предварительное значение y (без учёта начальных координат)
+    /**
+     * Вычисляет предварительное значение y (без учёта начальных координат)
+     * @returns {number} Значение y
+     */
     calcY() {
         // y = Math.sqrt(length * length - x * x) - length;
 
@@ -155,11 +190,18 @@ class Pendulum {
         return Math.sqrt(lengthSquared - xSquared) - this.length;
     }
 
+    /**
+     * Вычисляет период колебания
+     * @returns {number} Период колебания
+     */
     calcPeriod() {
         return 2 * Math.PI / Math.sqrt(this.length / g); // TODO: Разобраться, почему не 2π * sqrt(l/g)
     }
 
-    // Рисуем груз (материальную точку)
+    /**
+     * Рисует груз
+     * @param context Контекст 2D рендеринга для элемента canvas
+     */
     drawBob(context) {
         const gradient = context.createRadialGradient(this.x, this.y, this.radius, this.x - 2, this.y - 4, 2);
 
@@ -172,7 +214,10 @@ class Pendulum {
         context.fill();
     }
 
-    // Рисуем шнур/стержень (cord/rod), на котором висит груз
+    /**
+     * Рисует шнур/стержень (cord/rod), на котором висит груз
+     * @param context Контекст 2D рендеринга для элемента canvas
+     */
     drawCord(context) {
         drawLine(this.x0, this.y0 - this.length, this.x, this.y, "#555");
 
@@ -186,7 +231,10 @@ class Pendulum {
         }
     }
 
-    // Рисуем маятник целиком
+    /**
+     * Рисует маятник целиком
+     * @param context Контекст 2D рендеринга для элемента canvas
+     */
     draw(context) {
         this.time += this.dt;
 
