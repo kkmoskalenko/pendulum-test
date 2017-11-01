@@ -43,7 +43,7 @@ class Application {
                 const data = this.getData();
 
                 // Если маятник существут, сохраняем его текущее время
-                if(this.pendulum) {
+                if (this.pendulum) {
                     data.time = this.pendulum.time;
                 }
 
@@ -51,7 +51,7 @@ class Application {
                 this.pendulum = new Pendulum(250, 50, 20, data.angle, data.length);
 
                 // Если в data.time что-то сохранено, передаём текущее время новому маятнику
-                if(isFinite(data.time)) {
+                if (isFinite(data.time)) {
                     this.pendulum.time = data.time;
                 }
 
@@ -109,7 +109,7 @@ class Application {
             return false;
         }
         else {
-            if(data.angle < -90 || data.angle > 90) {
+            if (data.angle < -90 || data.angle > 90) {
                 alert("Начальный угол отклонения должен быть в пределах от -90° до 90°");
                 return false;
             }
@@ -183,7 +183,10 @@ class Pendulum {
     calcX() {
         // x = amplitude * Math.sin(time/period * 2 * Math.PI) * Math.pow(2.71, -0.1 * time * dclrt);
 
-        return this.amplitude * Math.cos(this.getTime() / this.period * 2 * Math.PI); // TODO: Разобраться, почему формула именно такая
+        const angularFrequency = (2 * Math.PI) / this.period; //  Циклическая частота (ω = [1 рад/с])
+
+        // В данном случае начальная фаза равна нулю (φ0 = 0)
+        return this.amplitude * Math.cos(angularFrequency * this.getTime());
     }
 
     /**
