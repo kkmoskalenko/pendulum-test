@@ -1,6 +1,15 @@
 const g = 9.80665; // Среднее ускорение свободного падения на Земле
 
 /**
+ * Конвертирует градусы в радианы
+ * @param degrees Значение в градусах
+ * @returns {number} Значение в радианах
+ */
+Math.radians = (degrees) => {
+    return degrees * Math.PI / 180;
+};
+
+/**
  * Класс, представляющий приложение
  */
 class Application {
@@ -11,6 +20,10 @@ class Application {
         this.canvas = document.getElementById("canvas");
         this.context = this.canvas.getContext("2d");
 
+        this.angleEl = document.getElementById("angle");
+        this.lengthEl = document.getElementById("length");
+        // this.decelerateEl = document.getElementById("decelerate");
+
         // Время (в миллисекундах), через которое происходит перерисовка
         this.interval = 30;
 
@@ -19,19 +32,28 @@ class Application {
         this.button = document.getElementById("mainButton");
         this.button.addEventListener('click', () => {
             if (this.run) {
-                Application.enableInputFields();
+                this.enableInputFields();
 
                 clearInterval(this.timer);
                 this.button.value = "Запустить";
             }
-            else if (Application.validateData()) {
-                Application.disableInputFields();
+            else if (this.validateData()) {
+                this.disableInputFields();
 
-                const data = Application.getData();
+                const data = this.getData();
 
-                this.pendulum = new Pendulum(250, 50, 20, data.amplitude, data.dt, data.length);
-                this.pendulum.drawCord(this.context);
-                this.pendulum.drawBob(this.context);
+                // Если маятник существут, сохраняем его текущее время
+                if(this.pendulum) {
+                    data.time = this.pendulum.time;
+                }
+
+                // Создаём новый маятник
+                this.pendulum = new Pendulum(250, 50, 20, data.angle, data.length);
+
+                // Если в data.time что-то сохранено, передаём текущее время новому маятнику
+                if(isFinite(data.time)) {
+                    this.pendulum.time = data.time;
+                }
 
                 this.timer = setInterval(() => this.redraw(), this.interval);
                 this.button.value = "Остановить";
@@ -54,28 +76,21 @@ class Application {
     redraw() {
         this.clear();
 
-        this.pendulum.draw(this.context);
+        this.pendulum.draw(this.context, this.interval);
     }
 
     /**
      * Получает данные полей
      * @returns {*} Данные полей или null, если они заполнены неправильно
      */
-    static getData() {
-        const amplitudeEl = document.getElementById("amplitude");
-        const dtEl = document.getElementById("speed");
-        const lengthEl = document.getElementById("length");
-        // const decelerateEl = document.getElementById("decelerate");
+    getData() {
+        const angle = parseFloat(this.angleEl.value);
+        const length = parseFloat(this.lengthEl.value);
+        // const decelerate = this.decelerateEl.checked; // true -> pendulum.dclrt = 1; false -> pendulum.dclrt = 0
 
-        const amplitude = parseFloat(amplitudeEl.value);
-        const dt = parseFloat(dtEl.value);
-        const length = parseFloat(lengthEl.value);
-        // const decelerate = decelerateEl.checked; // true -> pendulum.dclrt = 1; false -> pendulum.dclrt = 0
-
-        if (isFinite(amplitude) && isFinite(dt) && isFinite(length))
+        if (isFinite(angle) && isFinite(length))
             return {
-                amplitude: amplitude,
-                dt: dt,
+                angle: angle,
                 length: length
             };
         else
@@ -86,21 +101,16 @@ class Application {
      * Выводит alert'ы о недопустимых значениях
      * @returns {boolean} Флаг, верно ли заполнены поля
      */
-    static validateData() {
-        const data = Application.getData();
+    validateData() {
+        const data = this.getData();
 
         if (data === null) {
             alert("Одно или несколько полей заполнены неправильно или не заполнены совсем!");
             return false;
         }
         else {
-            if (data.amplitude > data.length) {
-                alert("Амплитуда не может быть больше длины нити!");
-                return false;
-            }
-
-            if (data.amplitude <= 0) {
-                alert("Амплитуда не может быть меньше либо равна 0!");
+            if(data.angle < -90 || data.angle > 90) {
+                alert("Начальный угол отклонения должен быть в пределах от -90° до 90°");
                 return false;
             }
 
@@ -111,27 +121,17 @@ class Application {
     /**
      * Активирует поля ввода
      */
-    static enableInputFields() {
-        const amplitudeField = document.getElementById('amplitude');
-        const speedField = document.getElementById('speed');
-        const lengthField = document.getElementById('length');
-
-        amplitudeField.disabled = false;
-        speedField.disabled = false;
-        lengthField.disabled = false;
+    enableInputFields() {
+        this.angleEl.disabled = false;
+        this.lengthEl.disabled = false;
     }
 
     /**
      * Блокирует поля ввода
      */
-    static disableInputFields() {
-        const amplitudeField = document.getElementById('amplitude');
-        const speedField = document.getElementById('speed');
-        const lengthField = document.getElementById('length');
-
-        amplitudeField.disabled = true;
-        speedField.disabled = true;
-        lengthField.disabled = true;
+    disableInputFields() {
+        this.angleEl.disabled = true;
+        this.lengthEl.disabled = true;
     }
 }
 
@@ -144,11 +144,10 @@ class Pendulum {
      * @param supportX0 Координата точки крепления маятника по оси X
      * @param supportY0 Координата точки крепления маятника по оси Y
      * @param radius Радиус груза (так как он имеет форму шара)
-     * @param amplitude Амплитуда колебания
-     * @param dt Шаг во времени – время, которое прибавляется к текущему при каждой перерисовке
-     * @param length Длина нити
+     * @param angle Угол начального отклонения маятника (в градусах)
+     * @param length Длина подвеса
      */
-    constructor(supportX0, supportY0, radius, amplitude, dt, length) {
+    constructor(supportX0, supportY0, radius, angle, length) {
         // Начальные координаты маятника
         this.x0 = supportX0;
         this.y0 = supportY0 + length;
@@ -158,13 +157,23 @@ class Pendulum {
         this.y = this.y0;
 
         this.radius = radius;
-        this.amplitude = amplitude;
-        this.dt = dt;
+        this.amplitude = Pendulum.calcAmplitude(angle, length);
         this.length = length;
 
         this.time = 0; // Время
-        this.period = this.calcPeriod();
+        this.period = this.calcPeriod(); // Период колебаний
         // this.dclrt = 0;
+    }
+
+    /**
+     * Вычисляет амплитуду колебания
+     * @param angle Угол начального отклонения (в градусах)
+     * @param length Длина подвеса
+     * @returns {number} Амплитуда колебания
+     */
+    static calcAmplitude(angle, length) {
+        const angleInRad = Math.radians(angle);
+        return Math.sin(angleInRad) * length;
     }
 
     /**
@@ -172,9 +181,9 @@ class Pendulum {
      * @returns {number} Значение x
      */
     calcX() {
-        // x = amplitude * Math.sin(time/period * 2* Math.PI) * Math.pow(2.71, -0.1 * time * dclrt);
+        // x = amplitude * Math.sin(time/period * 2 * Math.PI) * Math.pow(2.71, -0.1 * time * dclrt);
 
-        return this.amplitude * Math.sin(this.time / this.period * 2 * Math.PI); // TODO: Разобраться, почему формула именно такая
+        return this.amplitude * Math.cos(this.getTime() / this.period * 2 * Math.PI); // TODO: Разобраться, почему формула именно такая
     }
 
     /**
@@ -196,6 +205,14 @@ class Pendulum {
      */
     calcPeriod() {
         return 2 * Math.PI / Math.sqrt(this.length / g); // TODO: Разобраться, почему не 2π * sqrt(l/g)
+    }
+
+    /**
+     * Возвращает текущее время в секундах
+     * @returns {number} Текущее время в секундах
+     */
+    getTime() {
+        return this.time / 1000;
     }
 
     /**
@@ -234,9 +251,10 @@ class Pendulum {
     /**
      * Рисует маятник целиком
      * @param context Контекст 2D рендеринга для элемента canvas
+     * @param interval Интервал, через который происходит перерисовка canvas
      */
-    draw(context) {
-        this.time += this.dt;
+    draw(context, interval) {
+        this.time += interval;
 
         this.x = this.calcX() + this.x0;
         this.y = this.calcY() + this.y0;
