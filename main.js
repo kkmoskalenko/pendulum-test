@@ -207,7 +207,7 @@ class Pendulum {
      * @returns {number} Период колебания
      */
     calcPeriod() {
-        return 2 * Math.PI / Math.sqrt(this.length / g); // TODO: Разобраться, почему не 2π * sqrt(l/g)
+        return 2 * Math.PI * Math.sqrt(this.length / g);
     }
 
     /**

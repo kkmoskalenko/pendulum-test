@@ -10,11 +10,15 @@
 <canvas id="canvas" width="500" height="500"></canvas>
 
 <div id="info">
-    <p class="mTop">Начальное отклонение: </p>
-    <input type="text" id="angle" size="9" placeholder="80">
+    <p class="mTop">
+        <label for="angle">Начальное отклонение: </label>
+        <input type="text" id="angle" size="3">&deg;
+    </p>
 
-    <p class="mTop">Длина подвеса: </p>
-    <input type="text" id="length" size="9" placeholder="200">
+    <p class="mTop">
+        <label for="length">Длина подвеса: </label>
+        <input type="text" id="length" size="3"> м
+    </p>
 
     <!--<p class="mTop">
         <label>
@@ -22,11 +26,8 @@
         </label>
     </p>-->
 
-    <br>
-    <br>
-
     <p class="mTop">
-        <input type="button" value="Запустить" id="mainButton"/>
+        <input type="button" value="Запустить" id="mainButton">
     </p>
 </div>
 </body>
