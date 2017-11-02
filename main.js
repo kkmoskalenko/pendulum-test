@@ -1,5 +1,3 @@
-const g = 9.80665; // Среднее ускорение свободного падения на Земле
-
 /**
  * Конвертирует градусы в радианы
  * @param degrees Значение в градусах
@@ -22,7 +20,7 @@ class Application {
 
         this.angleEl = document.getElementById("angle");
         this.lengthEl = document.getElementById("length");
-        // this.decelerateEl = document.getElementById("decelerate");
+        this.decelerationEl = document.getElementById("deceleration");
 
         // Время (в миллисекундах), через которое происходит перерисовка
         this.interval = 30;
@@ -48,7 +46,7 @@ class Application {
                 }
 
                 // Создаём новый маятник
-                this.pendulum = new Pendulum(250, 50, 20, data.angle, data.length);
+                this.pendulum = new Pendulum(250, 50, 15, data.angle, data.length, data.deceleration);
 
                 // Если в data.time что-то сохранено, передаём текущее время новому маятнику
                 if (isFinite(data.time)) {
@@ -86,12 +84,13 @@ class Application {
     getData() {
         const angle = parseFloat(this.angleEl.value);
         const length = parseFloat(this.lengthEl.value);
-        // const decelerate = this.decelerateEl.checked; // true -> pendulum.dclrt = 1; false -> pendulum.dclrt = 0
+        const deceleration = parseFloat(this.decelerationEl.value);
 
-        if (isFinite(angle) && isFinite(length))
+        if (isFinite(angle) && isFinite(length) && isFinite(deceleration))
             return {
                 angle: angle,
-                length: length
+                length: length,
+                deceleration: deceleration
             };
         else
             return null;
@@ -110,7 +109,17 @@ class Application {
         }
         else {
             if (data.angle < -90 || data.angle > 90) {
-                alert("Начальный угол отклонения должен быть в пределах от -90° до 90°");
+                alert("Начальный угол отклонения должен быть в пределах от -90° до 90°!");
+                return false;
+            }
+
+            if (data.length <= 0) {
+                alert("Длина подвеса должна быть больше нуля!");
+                return false;
+            }
+
+            if (data.deceleration < 0) {
+                alert("Коэффицент затухания не должен быть меньше нуля!");
                 return false;
             }
 
@@ -124,6 +133,7 @@ class Application {
     enableInputFields() {
         this.angleEl.disabled = false;
         this.lengthEl.disabled = false;
+        this.decelerationEl.disabled = false;
     }
 
     /**
@@ -132,6 +142,7 @@ class Application {
     disableInputFields() {
         this.angleEl.disabled = true;
         this.lengthEl.disabled = true;
+        this.decelerationEl.disabled = true;
     }
 }
 
@@ -146,8 +157,12 @@ class Pendulum {
      * @param radius Радиус груза (так как он имеет форму шара)
      * @param angle Угол начального отклонения маятника (в градусах)
      * @param length Длина подвеса
+     * @param deceleration Коэффицент затухания
      */
-    constructor(supportX0, supportY0, radius, angle, length) {
+    constructor(supportX0, supportY0, radius, angle, length, deceleration) {
+        const coef = 400; // Коэффециент масштабирования длины нити
+        length *= coef;
+
         // Начальные координаты маятника
         this.x0 = supportX0;
         this.y0 = supportY0 + length;
@@ -159,10 +174,10 @@ class Pendulum {
         this.radius = radius;
         this.amplitude = Pendulum.calcAmplitude(angle, length);
         this.length = length;
+        this.deceleration = deceleration;
 
         this.time = 0; // Время
-        this.period = this.calcPeriod(); // Период колебаний
-        // this.dclrt = 0;
+        this.period = Pendulum.calcPeriod(length / coef); // Период колебаний
     }
 
     /**
@@ -173,7 +188,19 @@ class Pendulum {
      */
     static calcAmplitude(angle, length) {
         const angleInRad = Math.radians(angle);
+
         return Math.sin(angleInRad) * length;
+    }
+
+    /**
+     * Вычисляет период колебания
+     * @param length Длина подвеса
+     * @returns {number} Период колебания
+     */
+    static calcPeriod(length) {
+        const g = 9.80665; // Среднее ускорение свободного падения на Земле
+
+        return 2 * Math.PI * Math.sqrt(length / g);
     }
 
     /**
@@ -181,12 +208,11 @@ class Pendulum {
      * @returns {number} Значение x
      */
     calcX() {
-        // x = amplitude * Math.sin(time/period * 2 * Math.PI) * Math.pow(2.71, -0.1 * time * dclrt);
-
         const angularFrequency = (2 * Math.PI) / this.period; //  Циклическая частота (ω = [1 рад/с])
+        const deceleration = Math.pow(Math.E, -this.deceleration * this.getTime());
 
         // В данном случае начальная фаза равна нулю (φ0 = 0)
-        return this.amplitude * Math.cos(angularFrequency * this.getTime());
+        return this.amplitude * Math.cos(angularFrequency * this.getTime()) * deceleration;
     }
 
     /**
@@ -194,20 +220,10 @@ class Pendulum {
      * @returns {number} Значение y
      */
     calcY() {
-        // y = Math.sqrt(length * length - x * x) - length;
-
         const lengthSquared = Math.pow(this.length, 2);
         const xSquared = Math.pow(this.calcX(), 2);
 
         return Math.sqrt(lengthSquared - xSquared) - this.length;
-    }
-
-    /**
-     * Вычисляет период колебания
-     * @returns {number} Период колебания
-     */
-    calcPeriod() {
-        return 2 * Math.PI * Math.sqrt(this.length / g);
     }
 
     /**
@@ -241,6 +257,14 @@ class Pendulum {
     drawCord(context) {
         drawLine(this.x0, this.y0 - this.length, this.x, this.y, "#555");
 
+        /**
+         * Рисует отрезок
+         * @param x0 Начальная координата x
+         * @param y0 Начальная координата y
+         * @param x Конечная координата x
+         * @param y Конечная координата y
+         * @param color Цвет отрезка
+         */
         function drawLine(x0, y0, x, y, color) {
             context.beginPath();
             context.strokeStyle = color;

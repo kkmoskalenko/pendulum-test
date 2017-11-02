@@ -7,7 +7,7 @@
 
 # Документация
 
-## Классы
+## Classes
 
 <dl>
 <dt><a href="#Application">Application</a></dt>
@@ -23,7 +23,7 @@
 ## Application
 Класс, представляющий приложение
 
-**Kind**: global class
+**Kind**: global class  
 
 * [Application](#Application)
     * [new Application()](#new_Application_new)
@@ -85,21 +85,21 @@
 **Kind**: global class  
 
 * [Pendulum](#Pendulum)
-    * [new Pendulum(supportX0, supportY0, radius, angle, length)](#new_Pendulum_new)
+    * [new Pendulum(supportX0, supportY0, radius, angle, length, deceleration)](#new_Pendulum_new)
     * _instance_
         * [.calcX()](#Pendulum+calcX) ⇒ <code>number</code>
         * [.calcY()](#Pendulum+calcY) ⇒ <code>number</code>
-        * [.calcPeriod()](#Pendulum+calcPeriod) ⇒ <code>number</code>
         * [.getTime()](#Pendulum+getTime) ⇒ <code>number</code>
         * [.drawBob(context)](#Pendulum+drawBob)
         * [.drawCord(context)](#Pendulum+drawCord)
         * [.draw(context, interval)](#Pendulum+draw)
     * _static_
         * [.calcAmplitude(angle, length)](#Pendulum.calcAmplitude) ⇒ <code>number</code>
+        * [.calcPeriod(length)](#Pendulum.calcPeriod) ⇒ <code>number</code>
 
 <a name="new_Pendulum_new"></a>
 
-### new Pendulum(supportX0, supportY0, radius, angle, length)
+### new Pendulum(supportX0, supportY0, radius, angle, length, deceleration)
 Создаёт маятник
 
 
@@ -110,6 +110,7 @@
 | radius | Радиус груза (так как он имеет форму шара) |
 | angle | Угол начального отклонения маятника (в градусах) |
 | length | Длина подвеса |
+| deceleration | Коэффицент затухания |
 
 <a name="Pendulum+calcX"></a>
 
@@ -125,13 +126,6 @@
 
 **Kind**: instance method of [<code>Pendulum</code>](#Pendulum)  
 **Returns**: <code>number</code> - Значение y  
-<a name="Pendulum+calcPeriod"></a>
-
-### pendulum.calcPeriod() ⇒ <code>number</code>
-Вычисляет период колебания
-
-**Kind**: instance method of [<code>Pendulum</code>](#Pendulum)  
-**Returns**: <code>number</code> - Период колебания  
 <a name="Pendulum+getTime"></a>
 
 ### pendulum.getTime() ⇒ <code>number</code>
@@ -184,4 +178,16 @@
 | Param | Description |
 | --- | --- |
 | angle | Угол начального отклонения (в градусах) |
+| length | Длина подвеса |
+
+<a name="Pendulum.calcPeriod"></a>
+
+### Pendulum.calcPeriod(length) ⇒ <code>number</code>
+Вычисляет период колебания
+
+**Kind**: static method of [<code>Pendulum</code>](#Pendulum)  
+**Returns**: <code>number</code> - Период колебания  
+
+| Param | Description |
+| --- | --- |
 | length | Длина подвеса |
