@@ -5,6 +5,8 @@
 1. Склонировать этот репозиторий или скачать и распаковать [архив с исходным кодом](https://github.com/kkmoskalenko/pendulum-test/archive/master.zip).
 2. Открыть `index.html` любым браузером
 
+Кроме того, последняя версия проекта всегда доступна по [адресу](https://kkmoskalenko.github.io/pendulum-test/).
+
 # Документация
 
 ## Classes
